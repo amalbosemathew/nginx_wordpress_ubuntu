@@ -1,0 +1,14 @@
+server {
+        listen {{ dport }};
+        listen [::]:{{ dport }};
+        root {{ droot }}/{{ dname }};
+        index index.html index.htm index.php index.nginx-debian.html;
+        server_name {{ dname }};
+        location / {
+                try_files $uri $uri/ =404;
+        }
+        location ~ \.php$ {
+        include snippets/fastcgi-php.conf;
+        fastcgi_pass unix:/run/php/php7.4-fpm.sock;
+        }
+}
