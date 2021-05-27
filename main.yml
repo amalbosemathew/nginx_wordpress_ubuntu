@@ -3,47 +3,32 @@
   hosts: all
   become: true
   vars_files:
-    - vars.vars
-  vars_prompt:
-    - name: dname
-      prompt: Enter Your Domain "eg example.com" and its must not exist
-      private: no
-    - name: mysql_user
-      prompt: Enter Your Wordpress Databases Username "eg wordpress" and its must not exist
-      private: no
-    - name: mysql_db
-      prompt: Enter Your Wordpress Database Name "eg wordpressdb" and its must not exist
-      private: no
-    - name: mysql_pw
-      prompt: Enter Your Wordpress Databases Password "eg wordpressdbpassword"
-      private: yes
+    - apache.vars
   tasks:
     - name: "Installing NginX, PHP"
       apt:
         name:
           - nginx
-          - php
+          - php7.2
           - php-mysql
-          - php-fpm
         state: present
-
     - name: "Document root creation"
       file:
-        path: "{{ droot }}/{{ dname }}"
+        path: "{{ document_root }}/{{ domain_name }}"
         state: directory
-        owner: "{{ ownr }}"
-        group: "{{ ownr }}"
+        owner: "{{ owner }}"
+        group: "{{ owner }}"
 
     - name: "Copy conf file from local to nginx"
       template:
-        src: ./default.conf.tmpl
-        dest: "/etc/nginx/sites-available/{{ dname }}"
+        src: ./virtualhost.conf.tmpl
+        dest: "/etc/nginx/sites-available/{{ domain_name }}.conf"
       register: vhost_conf
 
     - name: "Create a symbolic link for nginx conf"
       file:
-        src: "/etc/nginx/sites-available/{{ dname }}"
-        dest: "/etc/nginx/sites-enabled/{{ dname }}"
+        src: "/etc/nginx/sites-available/{{ domain_name }}.conf"
+        dest: "/etc/nginx/sites-enabled/{{ domain_name }}.conf"
         state: link
 
     - name: Remove  default file (delete file)
@@ -57,21 +42,11 @@
       file:
         path: /etc/nginx/sites-enabled/default
         state: absent
-
-    - name: "Nginx syntax checking"
-      ignore_errors: true
-      shell: nginx -t
-      register: nginx_syn
-
-    - name: "Nginx Syntax Status"
-      when: nginx_syn.rc != 0
-      debug:
-        msg: "Status => {{ nginx_syn.stderr }}"
-
-    - name: "when nginx is fail and quit the playbook"
-      when: nginx_syn.rc != 0
-      fail:
-        msg: "Paly book exiting due to nginx syntax check failure."
+    - name: "Stopping service apache2, if running"
+      ignore_errors: yes
+      service:
+        name: apache2
+        state: stopped
 
     - name: "service enabling"
       when: vhost_conf.changed == true
@@ -89,15 +64,16 @@
         name:
           - mysql-server
           - python3-pymysql
+          - mysql-client
+          - php7.2-fpm
         state: present
-      register: initial
-
+        update_cache: yes
+      
     - name: "mysql - restarting/enabling service"
       service:
         name: mysql
         state: restarted
         enabled: true
-
     - name: "Change the authentication plugin of MySQL root user to mysql_native_password"
       ignore_errors: true
       shell: mysql -u root -e 'UPDATE mysql.user SET plugin="mysql_native_password" WHERE user="root" AND host="localhost"'
@@ -105,13 +81,12 @@
     - name: Flush Privileges
       ignore_errors: true
       shell: mysql -u root -e 'FLUSH PRIVILEGES'
-
+    
     - name: "mysql - update root password"
-      ignore_errors: true
+      ignore_errors: yes
       mysql_user:
         login_user: "root"
         login_password: ""
-        login_host: localhost
         user: "root"
         password: "{{ mysql_root }}"
         host_all: true
@@ -143,35 +118,35 @@
         login_user: "root"
         login_password: "{{ mysql_root }}"
         user: "{{ mysql_user }}"
-        password: "{{ mysql_pw }}"
+        password: "{{ mysql_db_password }}"
         host: "%"
         priv: '{{ mysql_db }}.*:ALL'
 
     - name: "Wordpress - Downloading Tar File"
       get_url:
         url: "{{ wordpress_url }}"
-        dest: /tmp/wordpress.tar.gz
+        dest: /tmp/wordpress.tar
 
     - name: "Wordpress - Extracting Wordpress.tar"
       unarchive:
-        src: /tmp/wordpress.tar.gz
+        src: /tmp/wordpress.tar
         dest: /tmp/
         remote_src: true
 
     - name: "Wordpress - Copying Contents"
       copy:
         src: /tmp/wordpress/
-        dest: "{{ droot }}/{{ dname }}/"
+        dest: "{{ document_root }}/{{ domain_name }}/"
         remote_src: true
-        owner: "{{ ownr }}"
-        group: "{{ ownr }}"
+        owner: "{{ owner }}"
+        group: "{{ owner }}"
 
     - name: "Wordpress - Creating wp-config.php"
       template:
         src: wp-config.php.tmpl
-        dest: "{{ droot }}/{{ dname }}/wp-config.php"
-        owner: "{{ ownr }}"
-        group: "{{ ownr }}"
+        dest: "{{ document_root }}/{{ domain_name }}/wp-config.php"
+        owner: "{{ owner }}"
+        group: "{{ owner }}"
 
 
     - name: "Post-Installation Restart"
@@ -188,4 +163,4 @@
         state: absent
       with_items:
         - /tmp/wordpress
-        - /tmp/wordpress.tar.gz
+        - /tmp/wordpress.tar
