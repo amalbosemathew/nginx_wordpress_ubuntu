@@ -33,7 +33,7 @@ Here we have used the "variables.vars" file to pass the variables as a plain tex
 
 To encrypt a file, use the ansible-vault encrypt command.
 ```sh
-ansible-vault encrypt main.yml hosts KEY_NAME.pem
+ansible-vault encrypt main.yml hosts KEY_NAME.pem variables.vars
 ```
 To prompt for the password:
 ```sh
