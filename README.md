@@ -13,7 +13,7 @@ In this guide, we’ll focus on getting a [Wordpress 5.7.2](https://wordpress.or
 [Inventory](https://docs.ansible.com/ansible/2.3/intro_inventory.html) , [File](https://docs.ansible.com/ansible/2.3/list_of_files_modules.html), [Database](https://docs.ansible.com/ansible/2.3/list_of_database_modules.html), [Command](https://docs.ansible.com/ansible/2.3/list_of_commands_modules.html)
 
 ## How to Use:
-First create a directory in master server .Then, clone this Github repository [nginx_wordpress_ubuntu](https://github.com/amalbosemathew/nginx_wordpress_ubuntu) to your master server which is pre-installed with Ansible2. Once you cloned this reposistory, edit your "hosts" file ([Inventory file](https://docs.ansible.com/ansible/2.3/intro_inventory.html)) accordingly and modify the "variables.vars" with the desired values. Also here I have used SSH private KEY based login. So I have copied the ssh private key file as "KEY_NAME.pem" in the same directory with read permission granted to the User/Owner (eg: chmod 400 KEY_NAME.pem).
+First create a directory in master server .Then, clone this Github repository [nginx_wordpress_ubuntu](https://github.com/amalbosemathew/nginx_wordpress_ubuntu) to your master server which is pre-installed with Ansible2. Once you cloned this repository, edit your "hosts" file ([Inventory file](https://docs.ansible.com/ansible/2.3/intro_inventory.html)) accordingly and modify the "variables.vars" with the desired values. Also here I have used SSH private KEY based login. So I have copied the ssh private key file as "KEY_NAME.pem" in the same directory with read permission granted to the User/Owner (eg: chmod 400 KEY_NAME.pem).
 
 Check the connection status to your client server via:
 ```sh
