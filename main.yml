@@ -3,7 +3,7 @@
   hosts: all
   become: true
   vars_files:
-    - apache.vars
+    - variables.vars
   tasks:
     - name: "Installing NginX, PHP"
       apt:
